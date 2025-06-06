@@ -8,7 +8,7 @@ import clsx from "clsx";
 
 import type { Game, Player, CellCoord, EndState } from "./game/game";
 import { ClientTicTacToe } from "./api";
-import { CLIENT_URL } from "./constants"
+import { SERVER_URL } from "./constants"
 
 const centerStyle = "flex flex-col items-center justify-center";
 const hoverStyle =
@@ -40,7 +40,7 @@ export function Game() {
 
   const intervalId = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => {
-    const socket = io(CLIENT_URL);
+    const socket = io(SERVER_URL);
     //let intervalId: NodeJS.Timeout
     socket.on("connect", () => {
       socket.emit("join-game", game.id)
