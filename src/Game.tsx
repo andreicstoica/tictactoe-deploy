@@ -366,7 +366,6 @@ function GameOver({ endState, onRestart }: GameOverProps) {
     // If endState is 'x' or 'o', construct JSX for the winner message
     message = (
       <div>
-        { victorySound.play() }
         Congrats player{" "}
         <span className={winnerStyle}>{endState.toUpperCase()}</span>! Player{" "}
         <span className={winnerStyle}>{endState.toUpperCase()}</span> wins!
@@ -380,6 +379,7 @@ function GameOver({ endState, onRestart }: GameOverProps) {
 
   return (
     <div className="flex flex-col items-center">
+      {endState && victorySound.play()}
       {winnerElement}
       <button
         onClick={() => onRestart()}
