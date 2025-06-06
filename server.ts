@@ -25,6 +25,8 @@ const io = new Server(server, {
   }
 })
 
+app.get("/", (_, res) => res.send("Hello from express!"));
+
 io.on('connection', (socket) => {
   console.log(`a user connected: ${socket.id}!!! LFG`)
 
@@ -40,8 +42,6 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('user-joined', socket.id)
   })
 })
-
-app.get("/message", (_, res) => res.send("Hello from express!"));
 
 app.post("/api/game", async (req, res) => {
   const game = await api.createGame(req.body.startingPlayer)
