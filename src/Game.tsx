@@ -38,28 +38,31 @@ export function Game() {
   const [aiAllowed, setAiAllowed] = useState<boolean>(false)
   const navigate = useNavigate()
 
+  const updateGame = (game: Game) => {
+    setAiAllowed(false)
+    setGame(game)
+    // start timer for AI next move button 
+    if (intervalId.current) {
+      clearInterval(intervalId.current)
+    }
+    intervalId.current = setInterval(() => setAiAllowed(true), 5000)
+  }
+
   const intervalId = useRef<NodeJS.Timeout | null>(null)
   useEffect(() => {
     const socket = io(SERVER_URL);
     //let intervalId: NodeJS.Timeout
     socket.on("connect", () => {
       socket.emit("join-game", game.id)
-
-      socket.on("game-updated", (game: Game) => {
-        setAiAllowed(false)
-        setGame(game)
-        // start timer for AI next move button 
-        if (intervalId.current) {
-          clearInterval(intervalId.current)
-        }
-        intervalId.current = setInterval(() => setAiAllowed(true), 5000)
-      })
     })
+
+    socket.on("game-updated", (updatedGame) => updateGame(updatedGame))
 
     return () => {
       if (intervalId.current) {
         clearInterval(intervalId.current)
       }
+      socket.off("game-updated", updateGame)
       socket.disconnect();
     }
   }, [game.id])
