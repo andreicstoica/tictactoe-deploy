@@ -6,7 +6,7 @@ import clsx from "clsx"
 
 export function Lobby() {
   const { ongoingGames: loadedGames } = useLoaderData<{ ongoingGames: Game[] }>()
-  const [games, setGames] = useState<Game[]>(loadedGames)
+  const [games] = useState<Game[]>(loadedGames)
   const navigate = useNavigate()
 
   const startGame = (startingPlayer: Player) => async () => {
