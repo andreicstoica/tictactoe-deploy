@@ -2,7 +2,7 @@ import express from "express"
 import { DbTicTacToeApi } from './src/db/db'
 import cors from "cors"
 import { Server } from "socket.io"
-import { Game } from "./src/game/game";
+import { Game } from "./src/gameEngine";
 
 const app = express();
 app.use(cors({
@@ -26,8 +26,7 @@ const io = new Server(server, {
 })
 
 io.on('connection', (socket) => {
-  console.log(`a user connected: ${socket.id}!!! LFG`)
-
+  
   socket.on('join-game', async (gameId: string) => {
     const foundGame = await api.getGame(gameId)
 

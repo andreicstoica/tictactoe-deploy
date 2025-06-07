@@ -1,4 +1,4 @@
-import type { Game, CellCoord, Player } from './game/game'
+import type { Game, CellCoord, Player } from './gameEngine'
 import { SERVER_URL } from "./constants"
 
 export interface TicTacToeApi {
