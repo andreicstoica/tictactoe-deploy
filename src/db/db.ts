@@ -3,8 +3,8 @@ import 'dotenv/config';
 import { eq, isNull } from 'drizzle-orm';
 import { gamesTable } from './schema';
 import type { TicTacToeApi } from '../api';
-import type { Player, Game, CellCoord, EndState, Board } from '../game/game';
-import { initializeGame, move } from '../game/game';
+import type { Player, Game, CellCoord, EndState, Board } from '../gameEngine';
+import { initializeGame, move } from '../gameEngine';
 
 
 const DATABASE_URL = process.env.DATABASE_URL
