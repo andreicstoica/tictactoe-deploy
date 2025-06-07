@@ -64,14 +64,18 @@ export const initializeGame = (startPlayer: Player): Game => {
 // make move
 export const move = (game: Game, chosenCellCoord: CellCoord): Game => {
   const nextGame = structuredClone(game)
-  const selectedCell = nextGame.board[chosenCellCoord.row][chosenCellCoord.col]
 
   // if the cell is already selected, change nothing
+  const selectedCell = nextGame.board[chosenCellCoord.row][chosenCellCoord.col]
   if (selectedCell) return nextGame
 
   // if the cell is empty, fill it and return, calculating endState
   nextGame.board[chosenCellCoord.row][chosenCellCoord.col] = nextGame.currentPlayer
-  return {...nextGame, currentPlayer: game.currentPlayer === 'x' ? 'o' : 'x', endState: checkEnd(nextGame)}
+  const endState = checkEnd(nextGame)
+  return {
+    ...nextGame, 
+    currentPlayer: game.currentPlayer === 'x' ? 'o' : 'x', 
+    endState}
 }
 
 const getRow = (board: Board, index: number): Cell[] => {
@@ -122,7 +126,7 @@ const checkEnd = (game: Game): EndState => {
   }
   // backwards diagonal
   const backDiag: Cell[] = [board[2][0], board[1][1],  board[0][2]]
-  if (backDiag.filter(cell => cell === 'x').length === 3 || firstDiag.filter(cell => cell === 'o').length === 3 ) {
+  if (backDiag.filter(cell => cell === 'x').length === 3 || backDiag.filter(cell => cell === 'o').length === 3 ) {
     //console.log('complete in back diag');
     return game.currentPlayer
   }
@@ -143,16 +147,14 @@ function isMovesLeft(game: Game): boolean {
 }
 
 function getScore(game: Game): number | undefined {
-  const player = game.currentPlayer;
   const board = game.board;
-  const opponent = player === "x" ? "o" : "x";
 
   // checking for row victory
   for (let row = 0; row < 3; row++) {
-    if (board[row][0] == board[row][1] && board[row][1] == board[row][2]) {
-      if (board[row][0] === player) {
+    if (board[row][0] === board[row][1] && board[row][1] === board[row][2] && board[row][0] !== null) {
+      if (board[row][0] === 'x') {
         return 10;
-      } else if (board[row][0] === opponent) {
+      } else if (board[row][0] === 'o') {
         return -10;
       }
     }
@@ -160,100 +162,98 @@ function getScore(game: Game): number | undefined {
 
   // checking for col victory
   for (let col = 0; col < 3; col++) {
-    if (board[0][col] == board[1][col] && board[1][col] == board[2][col]) {
-      if (board[0][col] === player) {
+    if (board[0][col] === board[1][col] && board[1][col] === board[2][col] && board[0][col] !== null) {
+      if (board[0][col] === 'x') {
         return 10;
-      } else if (board[0][col] === opponent) {
+      } else if (board[0][col] === 'o') {
         return -10;
       }
     }
+  }
 
     // Checking for Diagonals for X or O victory.
-    if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
-      if (board[0][0] == player) return 10;
-      else if (board[0][0] == opponent) return -10;
-    }
-
-    if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
-      if (board[0][2] == player) return 10;
-      else if (board[0][2] == opponent) return -10;
-    }
-
-    // Else if none of them have won then return 0
-    return 0;
+  if (board[0][0] === board[1][1] && board[1][1] === board[2][2] && board[0][0] !== null) {
+    if (board[0][0] === 'x') return 10;
+    else if (board[0][0] === 'o') return -10;
   }
+
+  if (board[0][2] === board[1][1] && board[1][1] === board[2][0] && board[0][2] !== null) {
+    if (board[0][2] === 'x') return 10;
+    else if (board[0][2] === 'o') return -10;
+  }
+
+
+  // if no moves left, return tie 0
+  if (isMovesLeft(game) === false){
+    return 0;
+  } 
+
+  // if moves are left AND no winner, game is still ongoing
+  return undefined
 }
 
-function minimax(game: Game, depth: number, isMax: boolean): number {
+function minimax(game: Game, depth: number, isMax: boolean, maximizingPlayer: Player, minimizingPlayer: Player): number {
   const score = getScore(game);
-  const player = game.currentPlayer;
   const board = game.board;
-  const opponent = player === "x" ? "o" : "x";
 
   // if Max has won the game, return score
-  if (score === 10) {
+  if (score != undefined) {
     return score;
-  }
+  } else {
+    if (isMax) {
+      let best = -1000;
+      const playertoMove = maximizingPlayer
 
-  // if Min has won the game, return score
-  if (score === -10) {
-    return score;
-  }
+      // Traverse all cells
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          // Check if cell is empty
+          if (board[i][j] === null) {
+            // Make the move
+            board[i][j] = playertoMove;
 
-  if (isMovesLeft(game) === false) {
-    return 0;
-  }
+            // Call minimax recursively
+            // and choose the maximum value
+            best = Math.max(best, minimax(game, depth + 1, !isMax, maximizingPlayer, minimizingPlayer));
 
-  if (isMax) {
-    let best = -1000;
-
-    // Traverse all cells
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        // Check if cell is empty
-        if (board[i][j] === null) {
-          // Make the move
-          board[i][j] = player;
-
-          // Call minimax recursively
-          // and choose the maximum value
-          best = Math.max(best, minimax(game, depth + 1, !isMax));
-
-          // Undo the move
-          board[i][j] = null;
+            // Undo the move
+            board[i][j] = null;
+          }
         }
       }
+      return best;
     }
-    return best;
-  }
 
-  // If this minimizer's move
-  else {
-    let best = 1000;
+    // If this minimizer's move
+    else {
+      let best = 1000;
+      const playertoMove = minimizingPlayer
 
-    // Traverse all cells
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) {
-        // Check if cell is empty
-        if (board[i][j] === null) {
-          // Make the move
-          board[i][j] = opponent;
+      // Traverse all cells
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          // Check if cell is empty
+          if (board[i][j] === null) {
+            // Make the move
+            board[i][j] = playertoMove;
 
-          // Call minimax recursively and
-          // choose the minimum value
-          best = Math.min(best, minimax(game, depth + 1, !isMax));
+            // Call minimax recursively and
+            // choose the minimum value
+            best = Math.min(best, minimax(game, depth + 1, !isMax, maximizingPlayer, minimizingPlayer));
 
-          // Undo the move
-          board[i][j] = null;
+            // Undo the move
+            board[i][j] = null;
+          }
         }
       }
+      return best;
     }
-    return best;
   }
 }
 
 export function findBestMove(game: Game) {
-  const player = game.currentPlayer;
+  const maximizingPlayer = game.currentPlayer;
+  const minimizingPlayer = maximizingPlayer === "x" ? "o" : "x"
   const board = game.board;
   let bestVal = -1000;
   const bestMove: CellCoord = { row: -1, col: -1 };
@@ -265,11 +265,11 @@ export function findBestMove(game: Game) {
       // Check if cell is empty
       if (board[i][j] === null) {
         // Make the move
-        board[i][j] = player;
+        board[i][j] = maximizingPlayer;
 
         // compute evaluation function
         // for this move.
-        const moveVal = minimax(game, 0, false);
+        const moveVal = minimax(game, 0, false, maximizingPlayer, minimizingPlayer);
 
         // Undo the move
         board[i][j] = null;

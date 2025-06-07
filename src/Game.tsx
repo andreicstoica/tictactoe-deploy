@@ -41,17 +41,6 @@ export function Game() {
   const [game, setGame] = useState<Game>(foundGame);
   const [aiAllowed, setAiAllowed] = useState<boolean>(false);
   const navigate = useNavigate();
-
-  const updateGame = (game: Game) => {
-    setAiAllowed(false);
-    setGame(game);
-    // start timer for AI next move button
-    if (intervalId.current) {
-      clearInterval(intervalId.current);
-    }
-    intervalId.current = setInterval(() => setAiAllowed(true), 5000);
-  };
-
   const intervalId = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -63,10 +52,12 @@ export function Game() {
     });
 
     // listener for server telling us the game has updated
-    socket.on("game-updated", (updatedGame) => updateGame(updatedGame));
+    socket.on("game-updated", (updatedGame) => setGame(updatedGame));
 
     // play win sound iff endState = x || o
     if (game.endState === "x" || game.endState === "o") victorySound.play();
+
+    intervalId.current = setInterval(() => setAiAllowed(true), 5000);
 
     // useEffect cleaner function
     return () => {
@@ -75,15 +66,18 @@ export function Game() {
       }
 
       // leave the game.id room and disconnect from socket
-      socket.off("game-updated", updateGame);
+      socket.off("game-updated", () => setGame(game));
       socket.disconnect();
     };
-  }, [game.id, game.endState]); // if game.id or endState somehow changes, update useEffect
+  }, [game, game.id, game.endState]); // if game.id or endState somehow changes, update useEffect
 
   async function handleClick(coords: CellCoord) {
-    const newGame = await api.makeMove(game!.id, coords);
     clickSound.play();
-    setGame(newGame);
+    setAiAllowed(false);
+    if (!game.endState) {
+      const newGame = await api.makeMove(game!.id, coords);
+      setGame(newGame);
+    }
   }
 
   if (!game) {
@@ -102,7 +96,7 @@ export function Game() {
         <br></br>
       </div>
 
-      <div className="flex justify-center shadow-md">
+      <div className={clsx("flex justify-center shadow-md")}>
         {game.board.map((row, rowIndex) => (
           <div key={rowIndex} className="flex flex-col">
             {row.map((cell, colIndex) => (
@@ -112,8 +106,9 @@ export function Game() {
                   centerStyle,
                   hoverStyle,
                   cellStyle,
-                  { "text-emerald-500 hover:cursor-not-allowed": cell === "x" },
-                  { "text-red-500 hover:cursor-not-allowed": cell === "o" },
+                  { "text-emerald-500": cell === "x" },
+                  { "text-red-500": cell === "o" },
+                  { "hover:cursor-not-allowed": cell || game.endState },
                   { "hover:cursor-pointer": cell === null }
                 )}
                 onClick={() => {
